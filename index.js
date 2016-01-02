@@ -33,6 +33,11 @@ function pollForChanges() {
       + '/ZAutomation/api/v1/devices?since=' + this.lastUpdateTime
 
     request(url, function (error, res, body) {
+      if (error) {
+        this.logger.error('Error polling Zway:')
+        this.logger.error(error)
+        return
+      }
       this.lastUpdateTime = Math.round(Date.now() / 1000)
       body = JSON.parse(body)
 
