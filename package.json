@@ -1,0 +1,9 @@
+{
+  "name": "automait-zway",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "ISC",
+  "dependencies": {
+    "request": "^2.67.0"
+  }
+}
