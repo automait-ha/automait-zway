@@ -51,6 +51,7 @@ function pollForChanges() {
         } else if (currentValue !== newValue) {
           this.deviceValues[id] = newValue
           this.emit(this.config.devices[id] + ':' + newValue)
+          this.emit(this.config.devices[id] + ':change', newValue)
         }
       }.bind(this))
 
