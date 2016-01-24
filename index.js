@@ -12,7 +12,6 @@ function Zway(automait, logger, config) {
   this.automait = automait
   this.logger = logger
   this.config = config
-  this.lastUpdateTime = 0
   this.deviceValues = {}
 
   Object.keys(this.config.devices).forEach(function (id) {
@@ -30,7 +29,7 @@ function pollForChanges() {
   setInterval(function () {
     var url = 'http://' + this.config.username + ':' + this.config.password + '@'
       + this.config.host + ':' + this.config.port
-      + '/ZAutomation/api/v1/devices?since=' + this.lastUpdateTime
+      + '/ZAutomation/api/v1/devices'
 
     request(url, function (error, res, body) {
       if (error) {
@@ -38,7 +37,6 @@ function pollForChanges() {
         this.logger.error(error)
         return
       }
-      this.lastUpdateTime = Math.round(Date.now() / 1000)
       body = JSON.parse(body)
 
       body.data.devices.forEach(function (device) {
