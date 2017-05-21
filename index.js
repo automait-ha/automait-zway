@@ -1,7 +1,7 @@
 module.exports = init
 
 var Emitter = require('events').EventEmitter
-  , request = require('request')
+  , Websocket = require('ws')
 
 function init(callback) {
   callback(null, 'zway', Zway)
@@ -12,48 +12,41 @@ function Zway(automait, logger, config) {
   this.automait = automait
   this.logger = logger
   this.config = config
-  this.deviceValues = {}
-
-  Object.keys(this.config.devices).forEach(function (id) {
-    this.deviceValues[id] = null
-  }.bind(this))
+  this.currentState = {}
 }
 
 Zway.prototype = Object.create(Emitter.prototype)
 
 Zway.prototype.init = function () {
-  pollForChanges.call(this)
+  connect.call(this)
 }
 
-function pollForChanges() {
-  setInterval(function () {
-    var url = 'http://' + this.config.username + ':' + this.config.password + '@'
-      + this.config.host + ':' + this.config.port
-      + '/ZAutomation/api/v1/devices'
+function connect() {
+  var ws = new Websocket('ws://' + this.config.host + ':' + this.config.port)
 
-    request(url, function (error, res, body) {
-      if (error) {
-        this.logger.error('Error polling Zway:')
-        this.logger.error(error)
-        return
+  ws.on('open', function () {
+    ws.on('message', function (data) {
+      data = JSON.parse(data)
+      if (data && data.data && data.type === 'me.z-wave.notifications.add') {
+        data = JSON.parse(data.data)
+        var id = data.source.replace('ZWayVDev_zway_', '')
+          , newValue = data.message.l ? data.message.l.split(' ')[0] : null
+          , deviceName = this.config.devices[id]
+        if (!deviceName) return
+        this.emit(deviceName + ':' + newValue)
+        this.emit(deviceName + ':change', newValue)
       }
-      body = JSON.parse(body)
-
-      body.data.devices.forEach(function (device) {
-        var id = device.id.replace('ZWayVDev_zway_', '')
-          , currentValue = this.deviceValues[id]
-          , newValue = device.metrics.level
-
-        if (!currentValue) {
-          this.deviceValues[id] = newValue
-        } else if (currentValue !== newValue) {
-          this.deviceValues[id] = newValue
-          this.emit(this.config.devices[id] + ':' + newValue)
-          this.emit(this.config.devices[id] + ':change', newValue)
-        }
-      }.bind(this))
-
     }.bind(this))
 
-  }.bind(this), this.config.pollInterval || 2000)
+    ws.on('close', function () {
+      connect.call(this)
+    }.bind(this))
+
+  }.bind(this))
+
+  ws.on('error', function (error) {
+    this.logger.error('Error with Zway:')
+    this.logger.error(error)
+    connect.call(this)
+  }.bind(this))
 }
