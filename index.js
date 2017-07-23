@@ -39,7 +39,9 @@ function connect() {
     }.bind(this))
 
     ws.on('close', function () {
-      connect.call(this)
+      setTimeout(function () {
+        connect.call(this)
+      }.bind(this), 2000)
     }.bind(this))
 
   }.bind(this))
@@ -47,6 +49,8 @@ function connect() {
   ws.on('error', function (error) {
     this.logger.error('Error with Zway:')
     this.logger.error(error)
-    connect.call(this)
+    setTimeout(function () {
+      connect.call(this)
+    }.bind(this), 2000)
   }.bind(this))
 }
